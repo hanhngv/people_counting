@@ -10,3 +10,6 @@ Demo_People_Counting.opensdf
 *.exe
 Debug/Demo_People_Counting.ilk
 *.idb
+*.suo
+*.lastbuildstate
+*.suo

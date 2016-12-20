@@ -1,6 +1,7 @@
 #define _AFXDLL
 #include <iostream>
 #include <time.h>
+#include <list>
 //#include <Windows.h>
 #include <afx.h>
 #include <afxwin.h>
