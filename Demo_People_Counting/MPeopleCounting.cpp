@@ -18,6 +18,7 @@ UINT RunFrameThreadInput(LPVOID pdata){
 MPeopleCounting::MPeopleCounting(){
 	b_running = false;
 
+	m_average_size = 50;
 	m_process_thread = NULL;
 	m_input_thread = NULL;
 }
@@ -55,9 +56,10 @@ void MPeopleCounting::release(){
 	}
 }
 
-void MPeopleCounting::begin(string file_name){
+void MPeopleCounting::begin(string file_name, int average_size){
 	b_running = true;
 	m_file_name = file_name;
+	m_average_size = average_size;
 
 	m_process_thread = AfxBeginThread(RunFrameThreadProc, this);
 	m_input_thread = AfxBeginThread(RunFrameThreadInput, this);
@@ -98,13 +100,13 @@ void MPeopleCounting::processFrame(){
 	while (b_running)
 	{
 		processing_time = 0;
-		getFrame(cur_frame);
+		getFrame(cur_frame, last_frame);
 		if(cur_frame.rows > 0){
 			if(last_frame.rows == 0)
 				last_frame = cur_frame.clone();
 			else{
 				int begin = clock();
-				MIP::compareImg(cur_frame, last_frame);
+				MIP::compareImg(cur_frame, last_frame, m_average_size);
 				processing_time = clock() - begin;
 				last_frame = cur_frame.clone();
 			}
@@ -120,6 +122,7 @@ void MPeopleCounting::addFrame(const Mat& img){
 	lock.Lock();
 
 	if(lock.IsLocked()){
+		m_last_frame = m_cur_frame.clone();
 		m_cur_frame = img.clone();
 		m_has_new_frame = true;
 	}
@@ -127,15 +130,19 @@ void MPeopleCounting::addFrame(const Mat& img){
 	lock.Unlock();
 }
 
-void MPeopleCounting::getFrame(Mat& img){
+void MPeopleCounting::getFrame(Mat& cur_frame, Mat& last_frame){
 	CSingleLock lock(&m_sync_frame);
 	lock.Lock();
 
 	if(lock.IsLocked()){
-		if(m_has_new_frame)
-			img = m_cur_frame.clone();
-		else
-			img = Mat(0, 0, CV_8UC3);
+		if(m_has_new_frame){
+			cur_frame = m_cur_frame.clone();
+			last_frame = m_last_frame.clone();
+		}
+		else{
+			cur_frame = Mat(0, 0, CV_8UC3);
+			last_frame = Mat(0, 0, CV_8UC3);
+		}
 
 		m_has_new_frame = false;
 	}

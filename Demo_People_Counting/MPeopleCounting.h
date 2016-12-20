@@ -13,11 +13,12 @@ class MPeopleCounting{
 	Mat m_last_frame;
 	Mat m_cur_frame;
 	bool m_has_new_frame;
+	int m_average_size;
 
 	CCriticalSection m_sync_frame;
 
 	void addFrame(const Mat& img);
-	void getFrame(Mat& img);
+	void getFrame(Mat& cur_frame, Mat& last_frame);
 
 public:
 	bool b_running;
@@ -27,7 +28,7 @@ public:
 	~MPeopleCounting();
 	void release();
 
-	void begin(string file_name);
+	void begin(string file_name, int average_size);
 	void stop();
 
 	void addFrame();

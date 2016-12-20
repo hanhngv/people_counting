@@ -3,7 +3,7 @@
 
 RNG rng(12345);
 
-float MIP::compareImg(Mat &img1, Mat &img2)
+float MIP::compareImg(Mat &img1, Mat &img2, int average_size)
 {
 	if(img1.rows != img2.rows)
 		return 1.0f;
@@ -111,11 +111,13 @@ float MIP::compareImg(Mat &img1, Mat &img2)
 		minEnclosingCircle( (Mat)contours_poly[i], center[i], radius[i] );
 	}
 
-	for( int i = 0; i< contours.size(); i++ )
+	removeNoiseCircle(center, radius, average_size);
+
+	for( int i = 0; i < center.size(); i++ )
 	{
 		Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-		drawContours( sub_xy, contours_poly, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
-		rectangle( sub_xy, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
+		//drawContours( sub_xy, contours_poly, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+		//rectangle( sub_xy, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
 		circle( img_merg, center[i], (int)radius[i] * 0.75, color, 2, 8, 0 );
 	}
 
@@ -142,3 +144,20 @@ float MIP::compareImg(Mat &img1, Mat &img2)
 	//AfxThread
 }
 
+void MIP::removeNoiseCircle(vector<Point2f> &center, vector<float> &radius, int average_size)
+{
+	for(int i = 0; i < center.size(); i++){
+		if(radius[i] < average_size / 2.5)
+		{
+			center.erase(center.begin() + i);
+			radius.erase(radius.begin() + i);
+			i--;
+		}
+		else if(radius[i] > average_size / 1.5)
+		{
+			center.erase(center.begin() + i);
+			radius.erase(radius.begin() + i);
+			i--;
+		}
+	}
+}

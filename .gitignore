@@ -1,0 +1,12 @@
+*.tlog
+Demo_People_Counting/Release/Demo_People_Counting.lastbuildstate
+*.log
+Demo_People_Counting/Release/MPeopleCounting.obj
+*.pdb
+Release/Demo_People_Counting.exe
+*.obj
+Demo_People_Counting.opensdf
+*.sdf
+*.exe
+Debug/Demo_People_Counting.ilk
+*.idb

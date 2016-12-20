@@ -24,7 +24,7 @@ int main()
 	MPeopleCounting counting_model;
 
 	time_t begin = clock();
-	counting_model.begin("..//inputs//Vid_03.mp4");
+	counting_model.begin("..//inputs//Vid_02.mp4", 70);
 	while(counting_model.b_running)
 		Sleep(1000);
 
