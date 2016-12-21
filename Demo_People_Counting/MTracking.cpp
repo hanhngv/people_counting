@@ -75,6 +75,7 @@ void MPeopleCounting::updateNewObj(){
 		MTrackObject* new_obj = new MTrackObject;
 		new_obj->m_object_hist.push_back(m_tmp_objs[i]);
 		new_obj->m_is_active = true;
+		new_obj->m_ID = MTrackObject::getNewID();
 		
 		m_track_objs.push_back(new_obj);
 	}

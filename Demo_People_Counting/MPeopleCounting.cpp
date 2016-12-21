@@ -327,9 +327,14 @@ void MPeopleCounting::illu(Mat& img){
 
 		MObject last = (*last_pos);
 
-		Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-		circle( img, Point2f(last.m_center.x / m_resize_scale, last.m_center.y / m_resize_scale), (int)last.m_radius / m_resize_scale, color, 2, 8, 0 );
+		ostringstream s_stream;
+		s_stream << (*it)->m_ID;
+		string num_str(s_stream.str());
 
+		Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+		Point2f draw_point(last.m_center.x / m_resize_scale, last.m_center.y / m_resize_scale);
+		circle( img, draw_point, (int)last.m_radius / m_resize_scale, color, 2, 8, 0 );
+		putText(img, num_str, draw_point, FONT_HERSHEY_SIMPLEX, 1, color, 1.5);
 	}
 
 	if(img.rows > 400)

@@ -29,13 +29,13 @@ class MTrackObject{
 	bool m_is_active;
 	int m_ID;
 	
-	int getNewID();
-
+	
 public:
 	MTrackObject();
 	~MTrackObject();
 
 	static int STA_cur_ID;
+	static int getNewID();
 
 	friend class MPeopleCounting;
 };
