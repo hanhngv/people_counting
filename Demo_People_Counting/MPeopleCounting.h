@@ -64,6 +64,8 @@ class MPeopleCounting{
 	void removeNoiseCircle();
 	void updateTrackList();
 	void updateActiveObj();
+	void updateNewObj();
+	float distance(Point2f a, Point2f b);
 
 	void updateTracking(Mat& cur_frame, Mat& last_frame);
 	void illu(Mat& img);

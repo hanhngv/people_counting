@@ -2,6 +2,7 @@
 #include <iostream>
 #include <time.h>
 #include <list>
+#include <math.h>
 //#include <Windows.h>
 #include <afx.h>
 #include <afxwin.h>

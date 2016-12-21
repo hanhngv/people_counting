@@ -84,6 +84,7 @@
   <ItemGroup>
     <ClCompile Include="MIP.cpp" />
     <ClCompile Include="MPeopleCounting.cpp" />
+    <ClCompile Include="MTracking.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>

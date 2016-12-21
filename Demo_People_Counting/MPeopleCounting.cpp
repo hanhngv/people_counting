@@ -3,7 +3,6 @@
 
 RNG rng(12345);
 
-int MTrackObject::STA_cur_ID = 0;
 
 UINT RunFrameThreadProc(LPVOID pdata){
 	MPeopleCounting* model = (MPeopleCounting*)pdata;
@@ -28,19 +27,6 @@ MObject::MObject(){
 MObject::~MObject(){
 }
 
-MTrackObject::MTrackObject(){
-	m_direct = MOVING_DIRECT::UNDEFINED;
-	m_is_active = false;
-}
-
-MTrackObject::~MTrackObject(){
-}
-
-int MTrackObject::getNewID(){
-	STA_cur_ID++;
-
-	return STA_cur_ID;
-}
 
 MPeopleCounting::MPeopleCounting(){
 	b_running = false;
@@ -66,6 +52,11 @@ MPeopleCounting::~MPeopleCounting(){
 		m_input_thread->Delete();
 		m_input_thread = NULL;
 	}
+
+	while (m_track_objs.size() > 0){
+		delete *(m_track_objs.begin());
+		m_track_objs.pop_front();
+	}
 }
 
 void MPeopleCounting::release(){
@@ -81,6 +72,11 @@ void MPeopleCounting::release(){
 	if(m_input_thread){
 		m_input_thread->Delete();
 		m_input_thread = NULL;
+	}
+
+	while (m_track_objs.size() > 0){
+		delete *(m_track_objs.begin());
+		m_track_objs.pop_front();
 	}
 }
 
@@ -137,6 +133,8 @@ void MPeopleCounting::processFrame(){
 				updateTracking(cur_frame, last_frame);
 				processing_time = clock() - begin;
 
+				//updateTrackList();
+
 				illu(cur_frame);
 
 				last_frame = cur_frame.clone();
@@ -147,13 +145,6 @@ void MPeopleCounting::processFrame(){
 		Sleep(100);
 	}
 }
-
-void MPeopleCounting::updateTracking(Mat& cur_frame, Mat& last_frame){
-	m_resize_scale = getObject(cur_frame, last_frame);
-	removeNoiseCircle();
-	updateTrackList();
-}
-
 
 void MPeopleCounting::addFrame(const Mat& img){
 	CSingleLock lock(&m_sync_frame);
@@ -320,11 +311,25 @@ float MPeopleCounting::getObject(Mat& img1, Mat& img2)
 }
 
 void MPeopleCounting::illu(Mat& img){
-	for( int i = 0; i < m_tmp_objs.size(); i++ ){
+	//for( int i = 0; i < m_tmp_objs.size(); i++ ){
+	//	Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+	//	//drawContours( sub_xy, contours_poly, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+	//	//rectangle( sub_xy, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
+	//	circle( img, Point2f(m_tmp_objs[i].m_center.x / m_resize_scale, m_tmp_objs[i].m_center.y / m_resize_scale), (int)m_tmp_objs[i].m_radius / m_resize_scale, color, 2, 8, 0 );
+	//}
+
+	list<MTrackObject*>::iterator it = m_track_objs.end();
+	while(it != m_track_objs.begin()){
+		it--;
+
+		list<MObject>::iterator last_pos = (*it)->m_object_hist.end();
+		last_pos--;
+
+		MObject last = (*last_pos);
+
 		Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-		//drawContours( sub_xy, contours_poly, i, color, 1, 8, vector<Vec4i>(), 0, Point() );
-		//rectangle( sub_xy, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
-		circle( img, Point2f(m_tmp_objs[i].m_center.x / m_resize_scale, m_tmp_objs[i].m_center.y / m_resize_scale), (int)m_tmp_objs[i].m_radius / m_resize_scale, color, 2, 8, 0 );
+		circle( img, Point2f(last.m_center.x / m_resize_scale, last.m_center.y / m_resize_scale), (int)last.m_radius / m_resize_scale, color, 2, 8, 0 );
+
 	}
 
 	if(img.rows > 400)
@@ -351,13 +356,9 @@ void MPeopleCounting::removeNoiseCircle(){
 	}
 }
 
-void MPeopleCounting::updateTrackList(){
-	updateActiveObj();
-}
+float MPeopleCounting::distance(Point2f a, Point2f b){
+	float tmp = (a.x - b.x) * (a.x - b.x);
+	tmp += (a.y - b.y) * (a.y - b.y);
 
-void MPeopleCounting::updateActiveObj(){
-	for(int i = 0; i < m_tmp_objs.size(); i++){
-		MTrackObject* nearest_obj = NULL;
-
-	}
+	return pow(tmp, 0.5);
 }
