@@ -2,12 +2,16 @@
 
 #include "MInputFrame.h"
 
-#define TIME_OUT_OBJECT 2
+#define TIME_OUT_OBJECT 1
+#define DIRECT_ENDENTIFIED 0
+#define DIRECT_ENTER 1
+#define DIRECT_LEAVE 2
+
 
 enum MOVING_DIRECT{
-	UP = 0,
-	DOWN,
-	UNDEFINED
+	ENTER = 0,
+	LEAVE,
+	UNDENTIFINED
 };
 
 class MObject{
@@ -29,6 +33,12 @@ class MTrackObject{
 	bool m_is_active;
 	time_t m_last_active;
 	int m_ID;
+	//bool m_being_count;
+
+	MObject m_last_change_direct_state;
+
+	int getNewID();
+	MOVING_DIRECT getDirect(MObject state_last, MObject state_cur);
 	
 	
 public:
@@ -36,7 +46,11 @@ public:
 	~MTrackObject();
 
 	static int STA_cur_ID;
-	static int getNewID();
+	//static int getNewID();
+
+	MOVING_DIRECT updateNewState(MObject new_state, time_t time_update);
+	MOVING_DIRECT getDirect();
+	MOVING_DIRECT updateCounting(MObject new_state);
 
 	friend class MPeopleCounting;
 };
@@ -46,7 +60,6 @@ class MPeopleCounting{
 
 	CWinThread* m_process_thread;
 	
-
 	MInputFrame* m_input_object;
 
 	Mat m_last_frame;
@@ -55,8 +68,9 @@ class MPeopleCounting{
 	time_t m_cur_update_time;
 
 	bool m_has_new_frame;
-	int m_average_size;
-	float m_resize_scale;
+	
+	int m_num_leave;
+	int m_num_enter;
 
 	CCriticalSection m_sync_frame;
 
@@ -78,13 +92,16 @@ class MPeopleCounting{
 
 public:
 	bool b_running;
+	static int STA_bar;
+	static float STA_resize_scale;
+	static int STA_average_size;
 
 public:
 	MPeopleCounting();
 	~MPeopleCounting();
 	void release();
 
-	void begin(MInputFrame* input_obj, int average_size);
+	void begin(MInputFrame* input_obj, int average_size, int bar_y);
 	void stop();
 
 	void addFrame();

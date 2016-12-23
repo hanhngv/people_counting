@@ -3,6 +3,10 @@
 
 RNG rng(12345);
 
+int MPeopleCounting::STA_bar = 100;
+float MPeopleCounting::STA_resize_scale = 1.0f;
+int MPeopleCounting::STA_average_size = 50;
+
 
 UINT RunFrameThreadProc(LPVOID pdata){
 	MPeopleCounting* model = (MPeopleCounting*)pdata;
@@ -32,10 +36,12 @@ MObject::~MObject(){
 MPeopleCounting::MPeopleCounting(){
 	b_running = false;
 
-	m_average_size = 50;
-	m_resize_scale = 1.0f;
+	//STA_average_size = 50;
+	//m_resize_scale = 1.0f;
 	m_process_thread = NULL;
 //	m_input_thread = NULL;
+	m_num_enter = 0;
+	m_num_leave = 0;
 }
 
 MPeopleCounting::~MPeopleCounting(){
@@ -76,11 +82,14 @@ void MPeopleCounting::release(){
 	}
 }
 
-void MPeopleCounting::begin(MInputFrame* input_obj, int average_size){
+void MPeopleCounting::begin(MInputFrame* input_obj, int average_size, int bar_y){
 	m_input_object = input_obj;
 	b_running = true;
 
-	m_average_size = average_size;
+	STA_average_size = average_size;
+	STA_bar = bar_y;
+	m_num_enter = 0;
+	m_num_leave = 0;
 
 	m_process_thread = AfxBeginThread(RunFrameThreadProc, this);
 }
@@ -339,10 +348,34 @@ void MPeopleCounting::illu(Mat& img){
 		Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
 		if(!(*it)->m_is_active)
 			color = Scalar(0, 0, 0);
-		Point2f draw_point(last.m_center.x / m_resize_scale, last.m_center.y / m_resize_scale);
-		circle( img, draw_point, (int)last.m_radius / m_resize_scale, color, 2, 8, 0 );
+		Point2f draw_point(last.m_center.x / STA_resize_scale, last.m_center.y / STA_resize_scale);
+		circle( img, draw_point, (int)last.m_radius / STA_resize_scale, color, 2, 8, 0 );
 		putText(img, num_str, draw_point, FONT_HERSHEY_SIMPLEX, 1, color, 1.5);
+
+		MOVING_DIRECT direct = (*it)->getDirect();
+		if(direct == MOVING_DIRECT::UNDENTIFINED){
+			circle( img, draw_point, (int)last.m_radius / STA_resize_scale / 4, color, 2, 8, 0 );
+		}
+		else if(direct == MOVING_DIRECT::ENTER){
+			line(img, draw_point, cv::Point(draw_point.x, draw_point.y + last.m_radius / STA_resize_scale / 1.5), color, 2);
+		}
+		else if(direct == MOVING_DIRECT::LEAVE){
+			line(img, draw_point, cv::Point(draw_point.x, draw_point.y - last.m_radius / STA_resize_scale / 1.5), color, 2);
+		}
+
 	}
+	line(img, cv::Point(0, STA_bar), cv::Point(img.cols, STA_bar), Scalar(0, 0, 255), 2);
+
+	ostringstream s_stream_enter;
+	s_stream_enter << m_num_enter;
+	string num_str = "Enter:" + string(s_stream_enter.str());
+	putText(img, num_str, cv::Point(img.cols / 2, (STA_bar + STA_average_size / 2 / STA_resize_scale)), FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 0, 0), 1.5);
+
+	ostringstream s_stream_leave;
+	s_stream_leave << m_num_leave;
+	num_str =  "Leave: " + string(s_stream_leave.str());
+	putText(img, num_str, cv::Point(img.cols / 2, (STA_bar - STA_average_size / 2 /STA_resize_scale)), FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 0, 0), 1.5);
+
 
 	if(img.rows > 400)
 		resize(img, img, cv::Size(img.cols * 400.0f / img.rows, 400));
@@ -353,15 +386,15 @@ void MPeopleCounting::illu(Mat& img){
 
 void MPeopleCounting::removeNoiseCircle(){
 	for(int i = 0; i < m_tmp_objs.size(); i++){
-		if(m_tmp_objs[i].m_radius < m_average_size / 2.5)
+		if(m_tmp_objs[i].m_radius < STA_average_size / 2.5)
 		{
 			m_tmp_objs.erase(m_tmp_objs.begin() + i);
 			i--;
 		}
-		else if(m_tmp_objs[i].m_radius > m_average_size )
+		else if(m_tmp_objs[i].m_radius > STA_average_size )
 		{
-			m_tmp_objs.erase(m_tmp_objs.begin() + i);
-			i--;
+			/*m_tmp_objs.erase(m_tmp_objs.begin() + i);
+			i--;*/
 		}
 		else
 			m_tmp_objs[i].m_radius *= 0.75;

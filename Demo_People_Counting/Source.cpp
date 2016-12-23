@@ -9,10 +9,10 @@ int main()
 
 	MInputFrame* input_obj = new MInputFromVideo();
 	//input_obj->init("..//inputs//Vid_02.mp4");
-	//counting_model.begin(input_obj, 70);
+	//counting_model.begin(input_obj, 70, 360);
 
 	input_obj->init("..//inputs//Vid_01.mp4");
-	counting_model.begin(input_obj, 50);
+	counting_model.begin(input_obj, 50, 150);
 
 	while(counting_model.b_running)
 		Sleep(1000);
