@@ -82,6 +82,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="MInputFrame.cpp" />
     <ClCompile Include="MIP.cpp" />
     <ClCompile Include="MPeopleCounting.cpp" />
     <ClCompile Include="MTracking.cpp" />
@@ -89,6 +90,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include.h" />
+    <ClInclude Include="MInputFrame.h" />
     <ClInclude Include="MIP.h" />
     <ClInclude Include="MPeopleCounting.h" />
   </ItemGroup>

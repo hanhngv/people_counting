@@ -11,12 +11,10 @@ UINT RunFrameThreadProc(LPVOID pdata){
 	return 0;
 }
 
-UINT RunFrameThreadInput(LPVOID pdata){
-	MPeopleCounting* model = (MPeopleCounting*)pdata;
-	model->addFrame();
 
-	return 0;
-}
+/// -----------------------------------------------------
+/// -------------------------- MObject ------------------
+/// -----------------------------------------------------
 
 MObject::MObject(){
 	m_center.x = 0;
@@ -27,6 +25,9 @@ MObject::MObject(){
 MObject::~MObject(){
 }
 
+/// -----------------------------------------------------
+/// ----------------------- MPeopleCounting -------------
+/// -----------------------------------------------------
 
 MPeopleCounting::MPeopleCounting(){
 	b_running = false;
@@ -34,7 +35,7 @@ MPeopleCounting::MPeopleCounting(){
 	m_average_size = 50;
 	m_resize_scale = 1.0f;
 	m_process_thread = NULL;
-	m_input_thread = NULL;
+//	m_input_thread = NULL;
 }
 
 MPeopleCounting::~MPeopleCounting(){
@@ -46,11 +47,6 @@ MPeopleCounting::~MPeopleCounting(){
 		Sleep(100);
 		m_process_thread->Delete();
 		m_process_thread = NULL;
-	}
-
-	if(m_input_thread){
-		m_input_thread->Delete();
-		m_input_thread = NULL;
 	}
 
 	while (m_track_objs.size() > 0){
@@ -69,10 +65,10 @@ void MPeopleCounting::release(){
 		m_process_thread = NULL;
 	}
 
-	if(m_input_thread){
+	/*if(m_input_thread){
 		m_input_thread->Delete();
 		m_input_thread = NULL;
-	}
+	}*/
 
 	while (m_track_objs.size() > 0){
 		delete *(m_track_objs.begin());
@@ -80,41 +76,41 @@ void MPeopleCounting::release(){
 	}
 }
 
-void MPeopleCounting::begin(string file_name, int average_size){
+void MPeopleCounting::begin(MInputFrame* input_obj, int average_size){
+	m_input_object = input_obj;
 	b_running = true;
-	m_file_name = file_name;
+
 	m_average_size = average_size;
 
 	m_process_thread = AfxBeginThread(RunFrameThreadProc, this);
-	m_input_thread = AfxBeginThread(RunFrameThreadInput, this);
 }
 
 void MPeopleCounting::stop(){
 	b_running = false;
 }
 
-void MPeopleCounting::addFrame(){
-	//cout << m_file_name << endl;
-	VideoCapture capture(m_file_name);
-	if(!capture.isOpened() )
-			cout <<"Error when reading steam_avi";
-	Mat frame;
-	while (b_running)
-	{
-		capture >> frame;
-        if(frame.empty()){
-            b_running = false;
-			break;
-		}
-		else
-			addFrame(frame);
-
-		cout <<"addFrame ..."<< endl;
-		Sleep(30);
-	}
-
-	b_running = false;
-}
+//void MPeopleCounting::addFrame(){
+//	//cout << m_file_name << endl;
+//	VideoCapture capture(m_file_name);
+//	if(!capture.isOpened() )
+//			cout <<"Error when reading steam_avi";
+//	Mat frame;
+//	while (b_running)
+//	{
+//		capture >> frame;
+//        if(frame.empty()){
+//            b_running = false;
+//			break;
+//		}
+//		else
+//			addFrame(frame);
+//
+//		cout <<"addFrame ..."<< endl;
+//		Sleep(30);
+//	}
+//
+//	b_running = false;
+//}
 
 void MPeopleCounting::processFrame(){
 	Mat last_frame(0, 0, CV_8UC3);
@@ -124,7 +120,8 @@ void MPeopleCounting::processFrame(){
 	while (b_running)
 	{
 		processing_time = 0;
-		getFrame(cur_frame, last_frame);
+
+		b_running = m_input_object->getFrame(cur_frame, last_frame, m_cur_update_time);
 		if(cur_frame.rows > 0){
 			if(last_frame.rows == 0)
 				last_frame = cur_frame.clone();
@@ -147,20 +144,27 @@ void MPeopleCounting::processFrame(){
 }
 
 void MPeopleCounting::addFrame(const Mat& img){
+	time_t cur_time = clock();
+
 	CSingleLock lock(&m_sync_frame);
+	while(lock.IsLocked())
+		Sleep(1);
 	lock.Lock();
 
 	if(lock.IsLocked()){
 		m_last_frame = m_cur_frame.clone();
 		m_cur_frame = img.clone();
 		m_has_new_frame = true;
+		m_cur_time = cur_time;
 	}
 
 	lock.Unlock();
 }
 
-void MPeopleCounting::getFrame(Mat& cur_frame, Mat& last_frame){
+void MPeopleCounting::getFrame(Mat& cur_frame, Mat& last_frame, time_t &time_update){
 	CSingleLock lock(&m_sync_frame);
+	while(lock.IsLocked())
+		Sleep(1);
 	lock.Lock();
 
 	if(lock.IsLocked()){
@@ -172,6 +176,7 @@ void MPeopleCounting::getFrame(Mat& cur_frame, Mat& last_frame){
 			cur_frame = Mat(0, 0, CV_8UC3);
 			last_frame = Mat(0, 0, CV_8UC3);
 		}
+		time_update = m_cur_time;
 
 		m_has_new_frame = false;
 	}
@@ -297,15 +302,15 @@ float MPeopleCounting::getObject(Mat& img1, Mat& img2)
 	//	circle( img_merg, m_tmp_objs[i].m_center, (int)m_tmp_objs[i].m_radius * 0.75, color, 2, 8, 0 );
 	//}
 
-	//Mat img_subxy, disp;
-	//cv::hconcat(sub_xy, sub_thresh, img_subxy);
-	//cv::vconcat(img_merg, img_subxy, disp);
+	/*Mat img_subxy, disp;
+	cv::hconcat(sub_xy, sub_thresh, img_subxy);
+	cv::vconcat(img_merg, img_subxy, disp);
 
-	//if(disp.rows > 800)
-	//	resize(disp, disp, cv::Size(disp.cols * (800.0f / disp.rows), 800));
+	if(disp.rows > 800)
+		resize(disp, disp, cv::Size(disp.cols * (800.0f / disp.rows), 800));
 
-	//cv::imshow("compare...", disp);
-	//cv::waitKey(1);
+	cv::imshow("compare...", disp);
+	cv::waitKey(1);*/
 
 	return resize_scale;
 }
@@ -332,6 +337,8 @@ void MPeopleCounting::illu(Mat& img){
 		string num_str(s_stream.str());
 
 		Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+		if(!(*it)->m_is_active)
+			color = Scalar(0, 0, 0);
 		Point2f draw_point(last.m_center.x / m_resize_scale, last.m_center.y / m_resize_scale);
 		circle( img, draw_point, (int)last.m_radius / m_resize_scale, color, 2, 8, 0 );
 		putText(img, num_str, draw_point, FONT_HERSHEY_SIMPLEX, 1, color, 1.5);
@@ -351,7 +358,7 @@ void MPeopleCounting::removeNoiseCircle(){
 			m_tmp_objs.erase(m_tmp_objs.begin() + i);
 			i--;
 		}
-		else if(m_tmp_objs[i].m_radius > m_average_size / 1.5)
+		else if(m_tmp_objs[i].m_radius > m_average_size )
 		{
 			m_tmp_objs.erase(m_tmp_objs.begin() + i);
 			i--;

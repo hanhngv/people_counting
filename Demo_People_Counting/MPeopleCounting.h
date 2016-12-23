@@ -1,6 +1,6 @@
 #pragma once
 
-#include "include.h"
+#include "MInputFrame.h"
 
 #define TIME_OUT_OBJECT 2
 
@@ -27,6 +27,7 @@ class MTrackObject{
 	MOVING_DIRECT m_direct;
 
 	bool m_is_active;
+	time_t m_last_active;
 	int m_ID;
 	
 	
@@ -40,15 +41,19 @@ public:
 	friend class MPeopleCounting;
 };
 
+
 class MPeopleCounting{
 
 	CWinThread* m_process_thread;
-	CWinThread* m_input_thread;
+	
 
-	string m_file_name;
+	MInputFrame* m_input_object;
 
 	Mat m_last_frame;
 	Mat m_cur_frame;
+	time_t m_cur_time;
+	time_t m_cur_update_time;
+
 	bool m_has_new_frame;
 	int m_average_size;
 	float m_resize_scale;
@@ -59,12 +64,13 @@ class MPeopleCounting{
 	list<MTrackObject*> m_track_objs;
 
 	void addFrame(const Mat& img);
-	void getFrame(Mat& cur_frame, Mat& last_frame);
+	void getFrame(Mat& cur_frame, Mat& last_frame, time_t &time_update);
 	float getObject(Mat& cur_frame, Mat& last_frame);
 	void removeNoiseCircle();
 	void updateTrackList();
 	void updateActiveObj();
 	void updateNewObj();
+	void removeOldObj();
 	float distance(Point2f a, Point2f b);
 
 	void updateTracking(Mat& cur_frame, Mat& last_frame);
@@ -78,7 +84,7 @@ public:
 	~MPeopleCounting();
 	void release();
 
-	void begin(string file_name, int average_size);
+	void begin(MInputFrame* input_obj, int average_size);
 	void stop();
 
 	void addFrame();
